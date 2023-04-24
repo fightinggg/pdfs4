@@ -1,7 +1,7 @@
 
 struct SuperMenuDataBlock {
     struct Super {
-        std::vector<int> bitmap;
+        std::vector<int> perhapsUsedBytes;
     };
 
     struct Menu {
