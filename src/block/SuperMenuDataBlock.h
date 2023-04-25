@@ -1,3 +1,4 @@
+#pragma once
 
 struct SuperMenuDataBlock {
     struct Super {
@@ -6,6 +7,14 @@ struct SuperMenuDataBlock {
 
     struct Menu {
         struct MenuNode {
+            enum MenuStatus {
+                valid,
+                deleting,
+                uploading
+            };
+
+            MenuStatus status;
+
             std::string name;
             int size;
             int updateTime;
@@ -53,4 +62,19 @@ struct SuperMenuDataBlock {
     Data data;
 
 
+    std::string encode();
+
+    static void decode(std::string);
+
 };
+
+
+std::string SuperMenuDataBlock::encode() {
+    return std::string();
+}
+
+void SuperMenuDataBlock::decode(std::string) {
+
+}
+
+
