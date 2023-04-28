@@ -1,3 +1,4 @@
+#pragma once
 namespace pdfs {
     class Storage {
     public:

@@ -11,6 +11,15 @@ namespace stream {
         std::string readN(int n) {
             std::string res;
             char ch;
+            while (n-- && read(ch)) {
+                res += ch;
+            }
+            return res;
+        }
+
+        std::string readAll() {
+            std::string res;
+            char ch;
             while (read(ch)) {
                 res += ch;
             }
@@ -19,4 +28,6 @@ namespace stream {
     };
 
     using InputStreamPtr = std::shared_ptr<InputStream>;
+
+
 }

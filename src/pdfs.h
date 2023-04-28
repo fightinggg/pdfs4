@@ -21,4 +21,6 @@ namespace pdfs {
 
         virtual bool mkdir(std::string filename) = 0;
     };
+
+    using PdfsPtr = std::shared_ptr<Pdfs>;
 }

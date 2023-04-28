@@ -1,4 +1,11 @@
+#include <memory>
+
 #pragma once
+
+struct SuperMenuDataBlock;
+
+using SuperMenuDataBlockPtr = std::shared_ptr<SuperMenuDataBlock>;
+
 
 struct SuperMenuDataBlock {
     struct Super {
@@ -62,19 +69,19 @@ struct SuperMenuDataBlock {
     Data data;
 
 
-    std::string encode();
+    static std::string encode();
 
-    static void decode(std::string);
+    static SuperMenuDataBlockPtr decode(const std::string &);
 
 };
 
 
 std::string SuperMenuDataBlock::encode() {
-    return std::string();
+    return {};
 }
 
-void SuperMenuDataBlock::decode(std::string) {
-
+SuperMenuDataBlockPtr SuperMenuDataBlock::decode(const std::string &) {
+    return std::make_shared<SuperMenuDataBlock>();
 }
 
 
