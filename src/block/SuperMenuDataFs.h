@@ -7,6 +7,7 @@
 #include "../storage/storage.h"
 #include "../utils/StringUtils.h"
 #include "../../lib/stream/StringInputStream.h"
+#include "../errors.h"
 
 namespace pdfs {
     class SuperMenuDataFs : public Pdfs {
@@ -49,7 +50,7 @@ namespace pdfs {
         stream::InputStreamPtr read(std::string filename, std::int64_t start, int len) override {
             lazy();
 
-            auto filenames = splitString(filename, "/");
+            auto filenames = parsePath(filename);
             auto root = &firstBlock->menu.root;
             for (const auto &pathNode: filenames) {
                 bool find = false;
@@ -61,7 +62,7 @@ namespace pdfs {
                     }
                 }
                 if (!find) {
-                    throw 1;
+                    throw NotFoundError("");
                 }
             }
 
@@ -70,13 +71,64 @@ namespace pdfs {
                 return read(root->dataInWhichBlock, root->dataInWhichIndex);
 
             }
-            throw 1;
+            throw NotFoundError("");
+        }
 
+        void createNewFile(SuperMenuDataBlock::Menu::MenuNode *pNode, const stream::InputStreamPtr &ptr) {
+            // put all file in first
+            // TODO
+            SuperMenuDataBlock::Data::DataNode item;
+            item.simpleData = true;
+            item.status = SuperMenuDataBlock::Data::DataNode::valid;
+            item.data = ptr->readAll();
+            firstBlock->data.dataNodes.push_back(item);
+
+            pNode->dataInWhichIndex = firstBlock->data.dataNodes.size() - 1;
+            pNode->dataInWhichBlock = 0;
+        }
+
+        void updateOldFile(SuperMenuDataBlock::Menu::MenuNode *pNode, const stream::InputStreamPtr &ptr) {
+            firstBlock->data.dataNodes[pNode->dataInWhichIndex].data = ptr->readAll();
         }
 
         bool write(std::string filename, std::int64_t start, int len, stream::InputStreamPtr ptr) override {
             lazy();
-            return false;
+            auto filenames = parsePath(filename);
+
+            auto root = &firstBlock->menu.root;
+
+            for (int i = 0; i < filenames.size(); i++) {
+                const auto &pathNode = filenames[i];
+                bool find = false;
+                for (auto &item: root->children) {
+                    if (item.name == pathNode) {
+                        root = &item;
+                        find = true;
+                        break;
+                    }
+                }
+                if (!find) {
+                    if (i != filenames.size() - 1) {
+                        SuperMenuDataBlock::Menu::MenuNode node;
+                        node.name = pathNode;
+                        node.isDir = true;
+                        root->children.push_back(node);
+
+                        root = &root->children.back();
+                    } else {
+                        SuperMenuDataBlock::Menu::MenuNode node;
+                        node.name = pathNode;
+                        node.isDir = false;
+                        root->children.push_back(node);
+
+                        root = &root->children.back();
+                        createNewFile(root, ptr);
+                        return true;
+                    }
+                }
+            }
+            updateOldFile(root, ptr);
+            return true;
         }
 
         bool deleteF(std::string filename) override {
@@ -87,8 +139,41 @@ namespace pdfs {
             return std::vector<FileInfo>();
         }
 
+        std::vector<std::string> parsePath(const std::string &path) {
+            auto split = splitString(path, '/');
+            std::vector<std::string> res;
+            for (const auto &item: split) {
+                if (!item.empty()) {
+                    res.push_back(item);
+                }
+            }
+            return res;
+        }
+
         bool mkdir(std::string filename) override {
-            return false;
+            lazy();
+            auto filenames = parsePath(filename);
+
+            auto root = &firstBlock->menu.root;
+            for (const auto &pathNode: filenames) {
+                bool find = false;
+                for (auto &item: root->children) {
+                    if (item.name == pathNode) {
+                        root = &item;
+                        find = true;
+                        break;
+                    }
+                }
+                if (!find) {
+                    SuperMenuDataBlock::Menu::MenuNode node;
+                    node.name = pathNode;
+                    node.isDir = true;
+                    root->children.push_back(node);
+
+                    root = &root->children.back();
+                }
+            }
+            return true;
         }
 
     public:

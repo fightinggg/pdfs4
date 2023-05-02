@@ -1,4 +1,5 @@
 #include <memory>
+#include <vector>
 
 #pragma once
 
@@ -27,6 +28,7 @@ struct SuperMenuDataBlock {
             int updateTime;
             int dataInWhichBlock;
             int dataInWhichIndex;
+            bool isDir;
 
             std::vector<MenuNode> children;
         } root;
