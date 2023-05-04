@@ -83,6 +83,13 @@ namespace pdfs {
             throw NotFoundError("");
         }
 
+        void findSpaceForNewFile(int size) {
+            // simple little file , storage in a block
+
+            // big file, split data and storage in multi block
+
+        }
+
         void createNewFile(SuperMenuDataBlock::Menu::MenuNode *pNode, const stream::InputStreamPtr &ptr, int size) {
             auto &perhapsUsedBytes = firstBlock->super.perhapsUsedBytes;
             for (int i = 0; i < perhapsUsedBytes.size(); i++) {

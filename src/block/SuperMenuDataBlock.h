@@ -55,6 +55,8 @@ struct SuperMenuDataBlock {
                 };
                 std::vector<MultiBlockPoint> datas;
             };
+
+            MultiBlockData multiBlockData;
         };
 
         std::vector<DataNode> dataNodes;
