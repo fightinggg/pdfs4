@@ -14,6 +14,15 @@ namespace pdfs {
         StoragePtr storagePtr;
         SuperMenuDataBlockPtr firstBlock; // this block storage all menu
 
+
+        SuperMenuDataBlockPtr readAndParseBlock(int block) {
+            if (block == 0) {
+                return firstBlock;
+            } else {
+                return SuperMenuDataBlockPtr(SuperMenuDataBlock::decode(storagePtr->read(block)->readAll()));
+            }
+        }
+
         stream::InputStreamPtr read(int block, int index) {
             SuperMenuDataBlockPtr blockPtr;
             if (block == 0) {
@@ -74,20 +83,40 @@ namespace pdfs {
             throw NotFoundError("");
         }
 
-        void createNewFile(SuperMenuDataBlock::Menu::MenuNode *pNode, const stream::InputStreamPtr &ptr) {
-            // put all file in first
-            // TODO
-            SuperMenuDataBlock::Data::DataNode item;
-            item.simpleData = true;
-            item.status = SuperMenuDataBlock::Data::DataNode::valid;
-            item.data = ptr->readAll();
-            firstBlock->data.dataNodes.push_back(item);
+        void createNewFile(SuperMenuDataBlock::Menu::MenuNode *pNode, const stream::InputStreamPtr &ptr, int size) {
+            auto &perhapsUsedBytes = firstBlock->super.perhapsUsedBytes;
+            for (int i = 0; i < perhapsUsedBytes.size(); i++) {
+                if (size + perhapsUsedBytes[i] < storagePtr->everyBlockBytes()) {
+                    auto block = readAndParseBlock(i);
+                    perhapsUsedBytes[i] = block->currentSize();
 
-            pNode->dataInWhichIndex = firstBlock->data.dataNodes.size() - 1;
-            pNode->dataInWhichBlock = 0;
+                    if (size + perhapsUsedBytes[i] < storagePtr->everyBlockBytes()) {
+
+                        // put all file into the first block
+                        SuperMenuDataBlock::Data::DataNode item;
+                        item.simpleData = true;
+                        item.status = SuperMenuDataBlock::Data::DataNode::valid;
+                        item.data = ptr->readAll();
+                        block->data.dataNodes.push_back(item);
+
+                        pNode->dataInWhichIndex = block->data.dataNodes.size() - 1;
+                        pNode->dataInWhichBlock = i;
+                        return;
+                    }
+                }
+            }
+
+            // could not put all file into one block
+            if (size > storagePtr->everyBlockBytes()) {
+
+            }
+
+
         }
 
         void updateOldFile(SuperMenuDataBlock::Menu::MenuNode *pNode, const stream::InputStreamPtr &ptr) {
+            puts("unsupport updateOldFile");
+            exit(-1);
             firstBlock->data.dataNodes[pNode->dataInWhichIndex].data = ptr->readAll();
         }
 
@@ -122,7 +151,7 @@ namespace pdfs {
                         root->children.push_back(node);
 
                         root = &root->children.back();
-                        createNewFile(root, ptr);
+                        createNewFile(root, ptr, len);
                         return true;
                     }
                 }

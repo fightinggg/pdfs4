@@ -24,11 +24,11 @@ struct SuperMenuDataBlock {
             MenuStatus status;
 
             std::string name;
-            int size;
-            int updateTime;
-            int dataInWhichBlock;
-            int dataInWhichIndex;
-            bool isDir;
+            int size{};
+            int updateTime{};
+            int dataInWhichBlock{};
+            int dataInWhichIndex{};
+            bool isDir{};
 
             std::vector<MenuNode> children;
         } root;
@@ -75,6 +75,8 @@ struct SuperMenuDataBlock {
 
     static SuperMenuDataBlockPtr decode(const std::string &);
 
+    int64_t currentSize();
+
 };
 
 
@@ -84,6 +86,15 @@ std::string SuperMenuDataBlock::encode() {
 
 SuperMenuDataBlockPtr SuperMenuDataBlock::decode(const std::string &) {
     return std::make_shared<SuperMenuDataBlock>();
+}
+
+int64_t SuperMenuDataBlock::currentSize() {
+    // TODO
+    int64_t res = 0;
+    for (const auto &item: data.dataNodes) {
+        res += (int64_t) item.data.size();
+    }
+    return res;
 }
 
 
