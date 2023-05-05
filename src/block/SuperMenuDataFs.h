@@ -126,7 +126,6 @@ namespace pdfs {
 //                    remainSize[i] = block->remainSize();
 
                     if (size <= remainSize[i]) {
-
                         // put all file into the first block
                         SuperMenuDataBlock::Data::DataNode item;
                         if (simple) {
@@ -151,14 +150,45 @@ namespace pdfs {
             }
 
             if (size > storagePtr->everyBlockBytes()) {
-                findSpaceForNewFile(pNode, size);
+                puts("UNSUPPORT");
+                exit(-1);
             }
+
+            puts("OOD");
+            exit(-1);
         }
 
-        void updateOldFile(SuperMenuDataBlock::Menu::MenuNode *pNode, const stream::InputStreamPtr &ptr) {
-            puts("unsupport updateOldFile");
-            exit(-1);
-            firstBlock->data.dataNodes[pNode->dataBlock.dataInWhichIndex].data = ptr->readAll();
+        void updateOldFile(SuperMenuDataBlock::Menu::MenuNode *pNode, int64_t start, int len,
+                           const stream::InputStreamPtr &ptr) {
+            auto block = readAndParseBlock(pNode->dataBlock.dataInWhichBlock);
+            auto dataPtr = &block->data.dataNodes[pNode->dataBlock.dataInWhichIndex];
+            if (dataPtr->simpleData) {
+                dataPtr->data = ptr->readAll();
+            } else {
+                std::vector<SuperMenuDataBlock::DataBlock> blocks = decodeDataBlocks(dataPtr->data);
+                int sum = 0;
+                for (int i = 0; i < blocks.size(); i++) {
+                    // [sum,sum+blocks[i].size)
+                    if (start >= sum && start < sum + blocks[i].size) {
+                        if (start + len > sum + blocks[i].size) {
+                            puts("unsupport updateOldFile");
+                            exit(-1);
+                        } else {
+                            block = readAndParseBlock(blocks[i].dataInWhichBlock);
+                            dataPtr = &block->data.dataNodes[blocks[i].dataInWhichIndex];
+                            if (dataPtr->simpleData) {
+                                dataPtr->data = ptr->readAll();
+                            } else {
+                                puts("dataPtr not simpleData error");
+                                exit(-1);
+                            }
+                        }
+                    }
+                    sum += blocks[i].size;
+                }
+
+            }
+
         }
 
         bool write(std::string filename, int64_t start, int len, stream::InputStreamPtr ptr) override {
@@ -192,12 +222,19 @@ namespace pdfs {
                         root->children.push_back(node);
 
                         root = &root->children.back();
-                        createNewFile(root, ptr, len, true);
-                        return true;
+
+                        if (len > storagePtr->everyBlockBytes()) {
+                            findSpaceForNewFile(root, len);
+                            updateOldFile(root, start, len, ptr);
+                            return true;
+                        } else {
+                            createNewFile(root, ptr, len, true);
+                            return true;
+                        }
                     }
                 }
             }
-            updateOldFile(root, ptr);
+            updateOldFile(root, start, len, ptr);
             return true;
         }
 

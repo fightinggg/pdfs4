@@ -93,6 +93,10 @@ std::string encodeDataBlocks(const std::vector<SuperMenuDataBlock::DataBlock> &b
     return {};
 }
 
+std::vector<SuperMenuDataBlock::DataBlock> decodeDataBlocks(const std::string &data) {
+    return {};
+}
+
 
 int64_t SuperMenuDataBlock::remainSize() {
     // TODO

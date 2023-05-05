@@ -13,7 +13,7 @@ namespace pdfs {
 //        fs->mkdir("/home");
 
         {
-            std::string data = "你好";
+            std::string data = "你好\n";
             std::string filename = "/home/a.txt";
             if (!fs->write(filename, 0, data.size(), stream::fromString(data))) {
                 puts("write failed");
