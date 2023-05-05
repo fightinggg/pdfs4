@@ -52,11 +52,8 @@ namespace pdfs {
             }
         }
 
-        void clear() {
 
-        }
-
-        stream::InputStreamPtr read(std::string filename, std::int64_t start, int len) override {
+        stream::InputStreamPtr read(std::string filename, int64_t start, int len) override {
             lazy();
 
             auto filenames = parsePath(filename);
@@ -75,59 +72,96 @@ namespace pdfs {
                 }
             }
 
-            if (root->dataInWhichBlock != -1 && root->dataInWhichIndex != -1) {
+            if (root->dataBlock.dataInWhichBlock != -1 && root->dataBlock.dataInWhichIndex != -1) {
                 // found here
-                return read(root->dataInWhichBlock, root->dataInWhichIndex);
+                if (root->status != SuperMenuDataBlock::Menu::MenuNode::valid) {
+                    puts("not valid file");
+                    exit(-1);
+                }
+                return read(root->dataBlock.dataInWhichBlock, root->dataBlock.dataInWhichIndex);
 
             }
             throw NotFoundError("");
         }
 
-        void findSpaceForNewFile(int size) {
+        void findSpaceForNewFile(SuperMenuDataBlock::Menu::MenuNode *pNode, int size) {
             // simple little file , storage in a block
 
             // big file, split data and storage in multi block
+            auto &remainSizes = firstBlock->super.remainSize;
+            std::vector<SuperMenuDataBlock::DataBlock> spaceSplit;
+            for (int i = 0; i < remainSizes.size(); i++) {
+                if (remainSizes[i] > 0) {
+                    SuperMenuDataBlock::DataBlock block;
 
+                    int need = std::min(size, remainSizes[i]);
+
+                    block.size = need;
+                    block.dataInWhichIndex = -1;
+                    block.dataInWhichBlock = i;
+
+                    spaceSplit.push_back(block);
+                    remainSizes[i] -= need;
+                    size -= need;
+                }
+                if (size == 0) {
+                    break;
+                }
+            }
+            if (size != 0) {
+                puts("OOD");
+                exit(-1);
+            }
+
+            auto data = encodeDataBlocks(spaceSplit);
+            createNewFile(pNode, stream::fromString(data), size, false);
         }
 
-        void createNewFile(SuperMenuDataBlock::Menu::MenuNode *pNode, const stream::InputStreamPtr &ptr, int size) {
-            auto &perhapsUsedBytes = firstBlock->super.perhapsUsedBytes;
-            for (int i = 0; i < perhapsUsedBytes.size(); i++) {
-                if (size + perhapsUsedBytes[i] < storagePtr->everyBlockBytes()) {
+        void createNewFile(SuperMenuDataBlock::Menu::MenuNode *pNode, const stream::InputStreamPtr &ptr, int size,
+                           bool simple) {
+            auto &remainSize = firstBlock->super.remainSize;
+            for (int i = 0; i < remainSize.size(); i++) {
+                if (size <= remainSize[i]) {
                     auto block = readAndParseBlock(i);
-                    perhapsUsedBytes[i] = block->currentSize();
+//                    remainSize[i] = block->remainSize();
 
-                    if (size + perhapsUsedBytes[i] < storagePtr->everyBlockBytes()) {
+                    if (size <= remainSize[i]) {
 
                         // put all file into the first block
                         SuperMenuDataBlock::Data::DataNode item;
-                        item.simpleData = true;
-                        item.status = SuperMenuDataBlock::Data::DataNode::valid;
-                        item.data = ptr->readAll();
+                        if (simple) {
+                            item.simpleData = true;
+                            item.status = SuperMenuDataBlock::Data::DataNode::valid;
+                            item.data = ptr->readAll();
+                            pNode->status = SuperMenuDataBlock::Menu::MenuNode::MenuStatus::valid;
+                        } else {
+                            item.simpleData = false;
+                            item.status = SuperMenuDataBlock::Data::DataNode::uploading;
+                            item.data = ptr->readAll();
+                            pNode->status = SuperMenuDataBlock::Menu::MenuNode::MenuStatus::uploading;
+                        }
+
                         block->data.dataNodes.push_back(item);
 
-                        pNode->dataInWhichIndex = block->data.dataNodes.size() - 1;
-                        pNode->dataInWhichBlock = i;
+                        pNode->dataBlock.dataInWhichIndex = block->data.dataNodes.size() - 1;
+                        pNode->dataBlock.dataInWhichBlock = i;
                         return;
                     }
                 }
             }
 
-            // could not put all file into one block
             if (size > storagePtr->everyBlockBytes()) {
-
+                findSpaceForNewFile(pNode, size);
             }
-
-
         }
 
         void updateOldFile(SuperMenuDataBlock::Menu::MenuNode *pNode, const stream::InputStreamPtr &ptr) {
             puts("unsupport updateOldFile");
             exit(-1);
-            firstBlock->data.dataNodes[pNode->dataInWhichIndex].data = ptr->readAll();
+            firstBlock->data.dataNodes[pNode->dataBlock.dataInWhichIndex].data = ptr->readAll();
         }
 
-        bool write(std::string filename, std::int64_t start, int len, stream::InputStreamPtr ptr) override {
+        bool write(std::string filename, int64_t start, int len, stream::InputStreamPtr ptr) override {
             lazy();
             auto filenames = parsePath(filename);
 
@@ -158,7 +192,7 @@ namespace pdfs {
                         root->children.push_back(node);
 
                         root = &root->children.back();
-                        createNewFile(root, ptr, len);
+                        createNewFile(root, ptr, len, true);
                         return true;
                     }
                 }

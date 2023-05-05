@@ -10,7 +10,14 @@ using SuperMenuDataBlockPtr = std::shared_ptr<SuperMenuDataBlock>;
 
 struct SuperMenuDataBlock {
     struct Super {
-        std::vector<int> perhapsUsedBytes;
+        std::vector<int> remainSize;
+    };
+
+    struct DataBlock {
+        int dataInWhichBlock{};
+        int dataInWhichIndex{};
+        int size{};
+
     };
 
     struct Menu {
@@ -24,10 +31,8 @@ struct SuperMenuDataBlock {
             MenuStatus status;
 
             std::string name;
-            int size{};
             int updateTime{};
-            int dataInWhichBlock{};
-            int dataInWhichIndex{};
+            DataBlock dataBlock;
             bool isDir{};
 
             std::vector<MenuNode> children;
@@ -48,15 +53,7 @@ struct SuperMenuDataBlock {
 
             std::string data;
 
-            struct MultiBlockData {
-                struct MultiBlockPoint {
-                    int dataInWhichBlock;
-                    int dataInWhichIndex;
-                };
-                std::vector<MultiBlockPoint> datas;
-            };
-
-            MultiBlockData multiBlockData;
+            std::vector<DataBlock> multiBlockData;
         };
 
         std::vector<DataNode> dataNodes;
@@ -77,7 +74,7 @@ struct SuperMenuDataBlock {
 
     static SuperMenuDataBlockPtr decode(const std::string &);
 
-    int64_t currentSize();
+    int64_t remainSize();
 
 };
 
@@ -87,10 +84,17 @@ std::string SuperMenuDataBlock::encode() {
 }
 
 SuperMenuDataBlockPtr SuperMenuDataBlock::decode(const std::string &) {
-    return std::make_shared<SuperMenuDataBlock>();
+    auto res = std::make_shared<SuperMenuDataBlock>();
+    res->super.remainSize = std::vector<int>(10, 1 << 20);
+    return res;
 }
 
-int64_t SuperMenuDataBlock::currentSize() {
+std::string encodeDataBlocks(const std::vector<SuperMenuDataBlock::DataBlock> &blocks) {
+    return {};
+}
+
+
+int64_t SuperMenuDataBlock::remainSize() {
     // TODO
     int64_t res = 0;
     for (const auto &item: data.dataNodes) {

@@ -12,18 +12,36 @@ namespace pdfs {
 
 //        fs->mkdir("/home");
 
-        std::string data = "你好";
-        std::string filename = "/home/a.txt";
-        if (!fs->write("/home/a.txt", 0, data.size(), stream::fromString(data))) {
-            puts("write failed");
-            return;
+        {
+            std::string data = "你好";
+            std::string filename = "/home/a.txt";
+            if (!fs->write(filename, 0, data.size(), stream::fromString(data))) {
+                puts("write failed");
+                return;
+            }
+
+            try {
+                data = fs->read(filename, 0, data.size())->readAll();
+                printf("%s", data.data());
+            } catch (const NotFoundError &err) {
+                puts(("找不到" + filename).data());
+            }
         }
 
-        try {
-            data = fs->read(filename, 0, data.size())->readAll();
-            printf("%s", data.data());
-        } catch (const NotFoundError &err) {
-            puts(("找不到" + filename).data());
+        {
+            std::string data(3000000, 'b');
+            std::string filename = "/home/b.txt";
+            if (!fs->write(filename, 0, data.size(), stream::fromString(data))) {
+                puts("write failed");
+                return;
+            }
+
+            try {
+                data = fs->read(filename, 0, data.size())->readAll();
+                printf("%s", data.data());
+            } catch (const NotFoundError &err) {
+                puts(("找不到" + filename).data());
+            }
         }
 
     }
