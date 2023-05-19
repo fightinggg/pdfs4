@@ -13,7 +13,7 @@ namespace pdfs {
     public:
         virtual stream::InputStreamPtr read(std::string filename, int64_t start, int len) = 0;
 
-        virtual bool write(std::string filename, int64_t start, int len, stream::InputStreamPtr) = 0;
+        virtual int64_t write(std::string filename, int64_t start, int len, stream::InputStreamPtr) = 0;
 
         virtual bool deleteF(std::string filename) = 0;
 

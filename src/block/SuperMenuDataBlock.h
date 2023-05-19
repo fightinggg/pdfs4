@@ -1,5 +1,6 @@
 #include <memory>
 #include <vector>
+#include "../utils/serialization.h"
 
 #pragma once
 
@@ -90,11 +91,29 @@ SuperMenuDataBlockPtr SuperMenuDataBlock::decode(const std::string &) {
 }
 
 std::string encodeDataBlocks(const std::vector<SuperMenuDataBlock::DataBlock> &blocks) {
-    return {};
+    return serialization(blocks);
 }
 
 std::vector<SuperMenuDataBlock::DataBlock> decodeDataBlocks(const std::string &data) {
-    return {};
+    std::vector<SuperMenuDataBlock::DataBlock> res;
+    deserialization(data.data(), data.size(), res);
+    return res;
+}
+
+std::string serialization(const SuperMenuDataBlock::DataBlock &rhs) {
+    std::vector<int64_t> data;
+    data.push_back(rhs.size);
+    data.push_back(rhs.dataInWhichBlock);
+    data.push_back(rhs.dataInWhichIndex);
+    return serialization(data);
+}
+
+void deserialization(const char *data, int len, SuperMenuDataBlock::DataBlock &rhs) {
+    std::vector<int64_t> data2;
+    deserialization(data, len, data2);
+    rhs.size = data2[0];
+    rhs.dataInWhichBlock = data2[1];
+    rhs.dataInWhichIndex = data2[2];
 }
 
 

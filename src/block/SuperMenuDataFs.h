@@ -114,11 +114,12 @@ namespace pdfs {
             }
 
             auto data = encodeDataBlocks(spaceSplit);
+//            spaceSplit = decodeDataBlocks(data);
             createNewFile(pNode, stream::fromString(data), size, false);
         }
 
-        void createNewFile(SuperMenuDataBlock::Menu::MenuNode *pNode, const stream::InputStreamPtr &ptr, int size,
-                           bool simple) {
+        int64_t createNewFile(SuperMenuDataBlock::Menu::MenuNode *pNode, const stream::InputStreamPtr &ptr, int size,
+                              bool simple) {
             auto &remainSize = firstBlock->super.remainSize;
             for (int i = 0; i < remainSize.size(); i++) {
                 if (size <= remainSize[i]) {
@@ -144,7 +145,7 @@ namespace pdfs {
 
                         pNode->dataBlock.dataInWhichIndex = block->data.dataNodes.size() - 1;
                         pNode->dataBlock.dataInWhichBlock = i;
-                        return;
+                        return size;
                     }
                 }
             }
@@ -158,8 +159,8 @@ namespace pdfs {
             exit(-1);
         }
 
-        void updateOldFile(SuperMenuDataBlock::Menu::MenuNode *pNode, int64_t start, int len,
-                           const stream::InputStreamPtr &ptr) {
+        int64_t updateOldFile(SuperMenuDataBlock::Menu::MenuNode *pNode, int64_t start, int len,
+                              const stream::InputStreamPtr &ptr) {
             auto block = readAndParseBlock(pNode->dataBlock.dataInWhichBlock);
             auto dataPtr = &block->data.dataNodes[pNode->dataBlock.dataInWhichIndex];
             if (dataPtr->simpleData) {
@@ -167,31 +168,51 @@ namespace pdfs {
             } else {
                 std::vector<SuperMenuDataBlock::DataBlock> blocks = decodeDataBlocks(dataPtr->data);
                 int sum = 0;
-                for (int i = 0; i < blocks.size(); i++) {
-                    // [sum,sum+blocks[i].size)
-                    if (start >= sum && start < sum + blocks[i].size) {
-                        if (start + len > sum + blocks[i].size) {
-                            puts("unsupport updateOldFile");
-                            exit(-1);
-                        } else {
-                            block = readAndParseBlock(blocks[i].dataInWhichBlock);
-                            dataPtr = &block->data.dataNodes[blocks[i].dataInWhichIndex];
+                for (auto &bk: blocks) {
+                    // this block's is range [sum,sum+blocks[bk].size)
+                    if (start >= sum && start < sum + bk.size) { // if this block need to write something
+                        if (start + len > sum + bk.size) { // if this update want to update not only one block
+                            // only write substring
+                            len = sum + bk.size - start;
+                        }
+                        block = readAndParseBlock(bk.dataInWhichBlock);
+                        if (bk.dataInWhichIndex != -1) {
+                            dataPtr = &block->data.dataNodes[bk.dataInWhichIndex];
                             if (dataPtr->simpleData) {
                                 dataPtr->data = ptr->readAll();
+                                // TODO write to disk
+                                return len;
                             } else {
                                 puts("dataPtr not simpleData error");
                                 exit(-1);
                             }
+                        } else {
+                            // need write new
+
+                            // TODO write to disk
+                            bk.dataInWhichIndex = block->data.dataNodes.size();
+                            dataPtr->data = encodeDataBlocks(blocks);
+
+                            SuperMenuDataBlock::Data::DataNode node;
+                            node.data = ptr->readAll();
+                            node.simpleData = true;
+                            node.status = SuperMenuDataBlock::Data::DataNode::valid;
+                            block->data.dataNodes.push_back(node);
+                            return len;
+
                         }
+
                     }
-                    sum += blocks[i].size;
+                    sum += bk.size;
                 }
 
             }
+            puts("updateOldFile ERROR");
+            return 0;
 
         }
 
-        bool write(std::string filename, int64_t start, int len, stream::InputStreamPtr ptr) override {
+        int64_t write(std::string filename, int64_t start, int len, stream::InputStreamPtr ptr) override {
             lazy();
             auto filenames = parsePath(filename);
 
@@ -225,17 +246,14 @@ namespace pdfs {
 
                         if (len > storagePtr->everyBlockBytes()) {
                             findSpaceForNewFile(root, len);
-                            updateOldFile(root, start, len, ptr);
-                            return true;
+                            return updateOldFile(root, start, len, ptr);
                         } else {
-                            createNewFile(root, ptr, len, true);
-                            return true;
+                            return createNewFile(root, ptr, len, true);
                         }
                     }
                 }
             }
-            updateOldFile(root, start, len, ptr);
-            return true;
+            return updateOldFile(root, start, len, ptr);
         }
 
         bool deleteF(std::string filename) override {

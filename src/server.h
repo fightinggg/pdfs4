@@ -15,7 +15,8 @@ namespace pdfs {
         {
             std::string data = "你好\n";
             std::string filename = "/home/a.txt";
-            if (!fs->write(filename, 0, data.size(), stream::fromString(data))) {
+            auto write = fs->write(filename, 0, data.size(), stream::fromString(data));
+            if (write != data.length()) {
                 puts("write failed");
                 return;
             }
@@ -31,9 +32,16 @@ namespace pdfs {
         {
             std::string data(3000000, 'b');
             std::string filename = "/home/b.txt";
-            if (!fs->write(filename, 0, data.size(), stream::fromString(data))) {
-                puts("write failed");
-                return;
+
+            for (int i = 0; i < data.size(); ) {
+                auto remainLine = data.size() - i;
+                auto sub = std::string(data.data(), data.data() + remainLine);
+                auto write = fs->write(filename, i, remainLine, stream::fromString(sub));
+                if (write == 0) {
+                    puts("write failed");
+                    return;
+                }
+                i+=write;
             }
 
             try {
@@ -47,6 +55,7 @@ namespace pdfs {
     }
 
     void main() {
+        _test_deserialization_vector();
         test();
 //        return;
 //        httplib::Server svr;
