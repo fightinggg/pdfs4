@@ -1,8 +1,23 @@
 #pragma once
 
+
+#include <vector>
+#include <string>
+#include <map>
+#include <set>
 #include "../lib/stream/InputStream.h"
 
 namespace pdfs {
+    using int64 = long long;
+    template<class T>
+    using vector = std::vector<T>;
+    using string = std::string;
+    template<class K, class V>
+    using map = std::map<K, V>;
+    template<class T>
+    using set = std::set<T>;
+
+
     struct FileInfo {
         int64_t size;
         std::string name;
@@ -20,6 +35,8 @@ namespace pdfs {
         virtual std::vector<FileInfo> ls(std::string filename) = 0;
 
         virtual bool mkdir(std::string filename) = 0;
+
+        virtual bool createFile(string filename, int64 size, string data) = 0;
     };
 
     using PdfsPtr = std::shared_ptr<Pdfs>;
