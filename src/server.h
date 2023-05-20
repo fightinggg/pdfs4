@@ -13,7 +13,7 @@ namespace pdfs {
 
 //        fs->mkdir("/home");
 
-        {
+       if(false) {
             std::string data = "hello world\n";
             std::string filename = "/home/a.txt";
             fs->createFile(filename, data.size(), data);
@@ -52,6 +52,7 @@ namespace pdfs {
             try {
                 auto newData = fs->read(filename, 0, data.size())->readAll();
                 if (data != newData) {
+                    printf("%d %d",data.size(),newData.size());
                     puts("not eq");
                     return;
                 }

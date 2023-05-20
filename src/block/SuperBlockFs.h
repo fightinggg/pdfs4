@@ -185,6 +185,18 @@ namespace pdfs {
 
 
         stream::InputStreamPtr read(std::string filename, int64_t start, int len) {
+            string data = readOneBlock(filename, start, len);
+            if (len == data.length()) {
+                return stream::fromString(data);
+            } else if (data.length() == 0) {
+                return stream::fromString(data);
+            } else {
+                // TODO lazy
+                return stream::fromString(data + read(filename, start + data.length(), len - data.length())->readAll());
+            }
+        }
+
+        string readOneBlock(std::string filename, int64_t start, int len) {
             for (auto &file: allFiles) {
                 if (file.filename == filename) {
                     int64 curStart = 0;
@@ -196,12 +208,13 @@ namespace pdfs {
                             deserialization(blockData.data(), blockData.size(), block);
 
 
-                            return stream::fromString(block[fileBlock.mark]);
+                            return block[fileBlock.mark];
                         }
+                        curStart += fileBlock.size;
                     }
                 }
             }
-            return stream::fromString("block[fileBlock.mark]");
+            return "";
         }
 
         int64_t write(std::string filename, int64_t start, int len, stream::InputStreamPtr dataPtr) {
