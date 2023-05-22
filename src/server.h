@@ -1,9 +1,10 @@
-//#include "../lib/cpp-httplib/httplib.h"
+#include "../lib/cpp-httplib/httplib.h"
 #include "block/SuperMenuDataFs.h"
 #include "pdfs.h"
 #include "storage/MemoryStorage.h"
 #include "errors.h"
 #include "block/SuperBlockFs.h"
+#include "utils/json.h"
 
 namespace pdfs {
     void test() {
@@ -13,7 +14,7 @@ namespace pdfs {
 
 //        fs->mkdir("/home");
 
-       if(false) {
+        if (false) {
             std::string data = "hello world\n";
             std::string filename = "/home/a.txt";
             fs->createFile(filename, data.size(), data);
@@ -52,7 +53,7 @@ namespace pdfs {
             try {
                 auto newData = fs->read(filename, 0, data.size())->readAll();
                 if (data != newData) {
-                    printf("%d %d",data.size(),newData.size());
+                    printf("%d %d", data.size(), newData.size());
                     puts("not eq");
                     return;
                 }
@@ -64,20 +65,38 @@ namespace pdfs {
     }
 
     void main() {
-        _test_deserialization_vector();
-        test();
+//        _test_deserialization_vector();
+//        test();
 //        return;
-//        httplib::Server svr;
-//
-//
-//        svr.Get("/", [](const httplib::Request &, httplib::Response &res) {
-//            res.set_redirect("/static");
-//        });
-//
-//        svr.set_mount_point("/static/", "D:\\src\\pdfs4\\webstatic");
-//
-//        std::cout << "http listen at port 8080" << std::endl;
-//        svr.listen("0.0.0.0", 8080);
+        int port = 8081;
+        string staticPath = "D:\\src\\pdfs4\\webstatic";
+
+        auto storagePtr = StoragePtr(new MemoryStorage(10, 1 << 20));
+        auto fs = PdfsPtr(new SuperBlockFs(storagePtr));
+
+
+        httplib::Server svr;
+
+        auto alowCors = [](httplib::Response &res) {
+            res.set_header("Access-Control-Allow-Origin", "*");
+            res.set_header("Access-Control-Allow-Methods", "*");
+            res.set_header("Access-Control-Allow-Headers", "*");
+        };
+
+        svr.Get("/", [](const httplib::Request &, httplib::Response &res) {
+            res.set_redirect("/static");
+        });
+
+        svr.Get("/api/list", [&](const httplib::Request &, httplib::Response &res) {
+            alowCors(res);
+            res.body = ::toJson(fs->ls(""));
+
+        });
+
+        svr.set_mount_point("/static/", staticPath);
+
+        std::cout << "http listen at port " << port << std::endl;
+        svr.listen("0.0.0.0", port);
     }
 
 }

@@ -249,7 +249,9 @@ namespace pdfs {
 
         bool deleteF(std::string filename) {}
 
-        std::vector<FileInfo> ls(std::string filename) {}
+        std::vector<FileInfo> ls(std::string filename) {
+            return std::vector<FileInfo>();
+        }
 
         bool mkdir(std::string filename) {}
 

@@ -40,4 +40,9 @@ namespace pdfs {
     };
 
     using PdfsPtr = std::shared_ptr<Pdfs>;
+
+
+    string toJson(const FileInfo &fileInfo) {
+        return "";
+    }
 }
