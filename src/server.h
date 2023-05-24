@@ -5,8 +5,20 @@
 #include "errors.h"
 #include "block/SuperBlockFs.h"
 #include "utils/json.h"
+#include "utils/http.h"
 
 namespace pdfs {
+    void addFile(PdfsPtr fs, string filename, string data) {
+//        std::string data = "hello world\n";
+//        std::string filename = "/home/a.txt";
+        fs->createFile(filename, data.size(), data);
+        auto write = fs->write(filename, 0, data.size(), stream::fromString(data));
+        if (write != data.length()) {
+            puts("write failed");
+            return;
+        }
+    }
+
     void test() {
         // 10MB
         auto storagePtr = StoragePtr(new MemoryStorage(10, 1 << 20));
@@ -74,6 +86,11 @@ namespace pdfs {
         auto storagePtr = StoragePtr(new MemoryStorage(10, 1 << 20));
         auto fs = PdfsPtr(new SuperBlockFs(storagePtr));
 
+        addFile(fs, "/a.txt", "123");
+        addFile(fs, "/b.txt", "456");
+        addFile(fs, "/c/c.txt", "789");
+        addFile(fs, "/c/哥哥.txt", "我是小黑子");
+
 
         httplib::Server svr;
 
@@ -87,9 +104,39 @@ namespace pdfs {
             res.set_redirect("/static");
         });
 
-        svr.Get("/api/list", [&](const httplib::Request &, httplib::Response &res) {
+        svr.Get("/api/list", [&](const httplib::Request &req, httplib::Response &res) {
             alowCors(res);
-            res.body = ::toJson(fs->ls(""));
+            auto split = splitString(req.target, '?');
+            if (split.size() == 2) {
+                split = splitString(split[1], '&');
+                if (split.size() == 1) {
+                    split = splitString(split[0], '=');
+                    if (split.size() == 2 && split[0] == "path") {
+                        res.body = ::toJson(fs->ls(split[1]));
+                        return;
+                    }
+                }
+            }
+            res.body = ::toJson(fs->ls("/"));
+
+        });
+
+
+        svr.Get("/api/file", [&](const httplib::Request &req, httplib::Response &res) {
+            alowCors(res);
+            auto split = splitString(req.target, '?');
+            if (split.size() == 2) {
+                split = splitString(split[1], '&');
+                if (split.size() == 1) {
+                    split = splitString(split[0], '=');
+                    if (split.size() == 2 && split[0] == "path") {
+                        auto path = url_decode(split[1]);
+                        res.body = fs->read(path,0,1024)->readAll();
+                        return;
+                    }
+                }
+            }
+            res.body = "404 NOT FOUND!!!";
 
         });
 

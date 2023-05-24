@@ -6,6 +6,7 @@
 #include <map>
 #include <set>
 #include "../lib/stream/InputStream.h"
+#include "utils/StringUtils.h"
 
 namespace pdfs {
     using int64 = long long;
@@ -20,7 +21,9 @@ namespace pdfs {
 
     struct FileInfo {
         int64_t size;
+        std::string path;
         std::string name;
+        std::string type;
         int64_t updateTime;
     };
 
@@ -43,6 +46,12 @@ namespace pdfs {
 
 
     string toJson(const FileInfo &fileInfo) {
-        return "";
+        vector<std::string> jsonFiles;
+        jsonFiles.push_back(R"("path":")" + fileInfo.path+ R"(")");
+        jsonFiles.push_back(R"("name":")" + fileInfo.name + R"(")");
+        jsonFiles.push_back(R"("size":")" + std::to_string(fileInfo.size) + R"(")");
+        jsonFiles.push_back(R"("type":")" + fileInfo.type + R"(")");
+        jsonFiles.push_back(R"("time":")" + std::to_string(fileInfo.updateTime) + R"(")");
+        return "{" + joinString(jsonFiles, ',') + "}";
     }
 }

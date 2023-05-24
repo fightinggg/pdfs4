@@ -41,14 +41,12 @@ void fromJson(const char *data, int len, int begin, T &rhs) {
 
 template<class T>
 std::string toJson(const std::vector<T> &t) {
-    std::string res;
-    res += toJson(int64_t(t.size()));
+    std::vector<std::string> res;
     for (const auto &item: t) {
         auto itemData = toJson(item);
-        res += toJson(int64_t(itemData.size()));
-        res += itemData;
+        res.push_back(itemData);
     }
-    return res;
+    return "[" + joinString(res, ',') + "]";
 }
 
 template<class T>
@@ -68,6 +66,5 @@ void fromJson(const char *data, int len, std::vector<T> &rhs) {
         rhs.push_back(t);
     }
 }
-
 
 

@@ -70,7 +70,8 @@ namespace pdfs {
         class File {
         public:
             string filename;
-            vector<FileBlock> fileBlocks;
+//            int updateTime;
+            vector <FileBlock> fileBlocks;
         };
 
 
@@ -250,7 +251,46 @@ namespace pdfs {
         bool deleteF(std::string filename) {}
 
         std::vector<FileInfo> ls(std::string filename) {
-            return std::vector<FileInfo>();
+            if (filename.back() != '/') {
+                exit(-1);
+                puts("filename.back()!='/'");
+            }
+            auto paths = splitString(filename, '/');
+            std::vector<FileInfo> res;
+            std::set<string> dir;
+            for (auto &file: allFiles) {
+                auto filePaths = splitString(file.filename, '/');
+                if (filePaths.size() == paths.size() + 1) {
+                    string back = filePaths.back();
+                    filePaths.pop_back();
+                    if (paths == filePaths) {
+                        FileInfo tmp;
+                        tmp.name = back;
+                        tmp.path = filename;
+                        tmp.type = "file";
+                        tmp.size = 0;
+                        for (const auto &item: file.fileBlocks) {
+                            tmp.size += item.size;
+                        }
+                        // TODO
+                        tmp.updateTime = -1;
+                        res.push_back(tmp);
+                    }
+                } else if (filePaths.size() > paths.size() + 1) {
+                    dir.insert(filePaths[paths.size()]);
+                }
+            }
+            for (const auto &item: dir) {
+                FileInfo tmp;
+                tmp.name = item ;
+                tmp.path = filename;
+                tmp.type = "folder";
+                tmp.size = 0;
+                // TODO
+                tmp.updateTime = -1;
+                res.push_back(tmp);
+            }
+            return res;
         }
 
         bool mkdir(std::string filename) {}
