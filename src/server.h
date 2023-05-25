@@ -11,7 +11,7 @@ namespace pdfs {
     void addFile(PdfsPtr fs, string filename, string data) {
 //        std::string data = "hello world\n";
 //        std::string filename = "/home/a.txt";
-        fs->createFile(filename, data.size(), data);
+        fs->createFile(filename, data.size());
         auto write = fs->write(filename, 0, data.size(), stream::fromString(data));
         if (write != data.length()) {
             puts("write failed");
@@ -29,7 +29,7 @@ namespace pdfs {
         if (false) {
             std::string data = "hello world\n";
             std::string filename = "/home/a.txt";
-            fs->createFile(filename, data.size(), data);
+            fs->createFile(filename, data.size());
             auto write = fs->write(filename, 0, data.size(), stream::fromString(data));
             if (write != data.length()) {
                 puts("write failed");
@@ -50,7 +50,7 @@ namespace pdfs {
             std::string data(3000000, 'b');
             std::string filename = "/home/b.txt";
 
-            fs->createFile(filename, data.size(), data);
+            fs->createFile(filename, data.size());
             for (int i = 0; i < data.size();) {
                 auto remainLine = data.size() - i;
                 auto sub = std::string(data.data(), data.data() + remainLine);
@@ -83,7 +83,7 @@ namespace pdfs {
         int port = 8081;
         string staticPath = "D:\\src\\pdfs4\\webstatic";
 
-        auto storagePtr = StoragePtr(new MemoryStorage(10, 1 << 20));
+        auto storagePtr = StoragePtr(new MemoryStorage(200, 1 << 20));
         auto fs = PdfsPtr(new SuperBlockFs(storagePtr));
 
         addFile(fs, "/a.txt", "123");
@@ -100,45 +100,53 @@ namespace pdfs {
             res.set_header("Access-Control-Allow-Headers", "*");
         };
 
-        svr.Get("/", [](const httplib::Request &, httplib::Response &res) {
+        auto parseRequests = [](string url) {
+            auto split = splitString(url, '?');
+            map<string, vector<string>> headers;
+            if (split.size() == 2) {
+                auto requestParamPairs = splitString(split[1], '&');
+                for (const auto &requestParamPair: requestParamPairs) {
+                    auto requestParamPairSplit = splitString(requestParamPair, '=');
+                    if (requestParamPairSplit.size() == 2) {
+                        headers[requestParamPairSplit[0]].push_back(url_decode(requestParamPairSplit[1]));
+                    }
+                }
+            }
+            return headers;
+        };
+
+
+        svr.Get("/", [&](const httplib::Request &, httplib::Response &res) {
             res.set_redirect("/static");
         });
 
         svr.Get("/api/list", [&](const httplib::Request &req, httplib::Response &res) {
             alowCors(res);
-            auto split = splitString(req.target, '?');
-            if (split.size() == 2) {
-                split = splitString(split[1], '&');
-                if (split.size() == 1) {
-                    split = splitString(split[0], '=');
-                    if (split.size() == 2 && split[0] == "path") {
-                        res.body = ::toJson(fs->ls(split[1]));
-                        return;
-                    }
-                }
-            }
-            res.body = ::toJson(fs->ls("/"));
-
+            auto reqParams = parseRequests(req.target);
+            auto path = url_decode(reqParams["path"][0]);
+            res.body = ::toJson(fs->ls(path));
         });
 
 
         svr.Get("/api/file", [&](const httplib::Request &req, httplib::Response &res) {
             alowCors(res);
-            auto split = splitString(req.target, '?');
-            if (split.size() == 2) {
-                split = splitString(split[1], '&');
-                if (split.size() == 1) {
-                    split = splitString(split[0], '=');
-                    if (split.size() == 2 && split[0] == "path") {
-                        auto path = url_decode(split[1]);
-                        res.body = fs->read(path,0,1024)->readAll();
-                        return;
-                    }
-                }
-            }
-            res.body = "404 NOT FOUND!!!";
-
+            auto reqParams = parseRequests(req.target);
+            auto path = url_decode(reqParams["path"][0]);
+            res.body = fs->read(path, 0, 1024)->readAll();
         });
+
+        // create file
+        svr.Options("/api/createFile", [&](const httplib::Request &req, httplib::Response &res) {
+            alowCors(res);
+            res.status = 200;
+        });
+        svr.Post("/api/createFile", [&](const httplib::Request &req, httplib::Response &res) {
+            alowCors(res);
+            auto reqParams = parseRequests(req.target);
+            auto status = fs->createFile(reqParams["path"][0], std::stoll(reqParams["size"][0]));
+            res.status = status ? 200 : 500;
+        });
+
 
         svr.set_mount_point("/static/", staticPath);
 

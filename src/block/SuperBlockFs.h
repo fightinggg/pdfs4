@@ -71,7 +71,7 @@ namespace pdfs {
         public:
             string filename;
 //            int updateTime;
-            vector <FileBlock> fileBlocks;
+            vector<FileBlock> fileBlocks;
         };
 
 
@@ -85,7 +85,10 @@ namespace pdfs {
             this->storagePtr = std::move(storagePtr);
         }
 
-        bool createFile(string filename, int64 size, string data) {
+        bool createFile(string filename, int64 size) override {
+            if (filename.empty() || filename[0] != '/') {
+                return false;
+            }
             // check exist
             for (const auto &file: allFiles) {
                 if (file.filename == filename) {
@@ -187,7 +190,7 @@ namespace pdfs {
 
         stream::InputStreamPtr read(std::string filename, int64_t start, int len) {
             string data = readOneBlock(filename, start, len);
-            if (len == data.length()) {
+            if (len <= data.length()) {
                 return stream::fromString(data);
             } else if (data.length() == 0) {
                 return stream::fromString(data);
@@ -197,7 +200,7 @@ namespace pdfs {
             }
         }
 
-        string readOneBlock(std::string filename, int64_t start, int len) {
+        string readOneBlock(std::string filename, int64_t start, int64 len) {
             for (auto &file: allFiles) {
                 if (file.filename == filename) {
                     int64 curStart = 0;
@@ -208,7 +211,9 @@ namespace pdfs {
                             Block block;
                             deserialization(blockData.data(), blockData.size(), block);
 
-
+                            if (fileBlock.mark == -1) {
+                                return string(std::min(fileBlock.size, len), '0');
+                            }
                             return block[fileBlock.mark];
                         }
                         curStart += fileBlock.size;
@@ -282,7 +287,7 @@ namespace pdfs {
             }
             for (const auto &item: dir) {
                 FileInfo tmp;
-                tmp.name = item ;
+                tmp.name = item;
                 tmp.path = filename;
                 tmp.type = "folder";
                 tmp.size = 0;

@@ -39,7 +39,7 @@ namespace pdfs {
 
         virtual bool mkdir(std::string filename) = 0;
 
-        virtual bool createFile(string filename, int64 size, string data) = 0;
+        virtual bool createFile(string filename, int64 size) = 0;
     };
 
     using PdfsPtr = std::shared_ptr<Pdfs>;
