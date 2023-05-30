@@ -132,7 +132,11 @@ namespace pdfs {
             alowCors(res);
             auto reqParams = parseRequests(req.target);
             auto path = url_decode(reqParams["path"][0]);
-            res.body = fs->read(path, 0, 1024)->readAll();
+            int size = 1024;
+            if (!reqParams["size"].empty()) {
+                size = std::stoll(reqParams["size"][0]);
+            }
+            res.body = fs->read(path, 0, size)->readAll();
         });
 
         // create file
