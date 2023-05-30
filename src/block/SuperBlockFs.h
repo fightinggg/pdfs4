@@ -224,6 +224,10 @@ namespace pdfs {
         }
 
         int64_t write(std::string filename, int64_t start, int len, stream::InputStreamPtr dataPtr) {
+            if (filename.empty() || filename[0] != '/') {
+                return 0;
+            }
+
             for (auto &file: allFiles) {
                 if (file.filename == filename) {
                     int64 curStart = 0;
@@ -233,18 +237,24 @@ namespace pdfs {
                             string blockData = storagePtr->read(fileBlock.block)->readAll();
                             Block block;
                             deserialization(blockData.data(), blockData.size(), block);
-                            fileBlock.mark = 0;
-                            while (block.contains(fileBlock.mark)) {
-                                fileBlock.mark++;
+
+                            if (fileBlock.mark == -1) {
+                                fileBlock.mark = 0;
+                                while (block.contains(fileBlock.mark)) {
+                                    fileBlock.mark++;
+                                }
                             }
 
-                            block[fileBlock.mark] = dataPtr->readN(fileBlock.size);
+                            auto old = block[fileBlock.mark];
+                            auto add = dataPtr->readN(fileBlock.size - old.size());
+                            block[fileBlock.mark] = old + add;
 
                             auto needToWrite = serialization(block);
-                            needToWrite += string(storagePtr->everyBlockBytes() - needToWrite.length(), '\0');
+                            int size = storagePtr->everyBlockBytes() - needToWrite.length();
+                            needToWrite += string(size, '\0');
                             storagePtr->write(fileBlock.block, needToWrite);
 
-                            return block[fileBlock.mark].length();
+                            return add.size();
                         }
                         curStart += fileBlock.size;
                     }

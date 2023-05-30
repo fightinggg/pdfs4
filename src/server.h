@@ -147,6 +147,21 @@ namespace pdfs {
             res.status = status ? 200 : 500;
         });
 
+        // write file
+        svr.Options("/api/writeFile", [&](const httplib::Request &req, httplib::Response &res) {
+            alowCors(res);
+            res.status = 200;
+        });
+        svr.Post("/api/writeFile", [&](const httplib::Request &req, httplib::Response &res) {
+            alowCors(res);
+            auto reqParams = parseRequests(req.target);
+            auto start = std::stoll(reqParams["start"][0]);
+            auto size = std::stoll(reqParams["size"][0]);
+            auto status = fs->write(reqParams["path"][0], start, size, stream::fromString(req.body));
+            res.status = 200;
+            res.body = std::to_string(status);
+        });
+
 
         svr.set_mount_point("/static/", staticPath);
 
