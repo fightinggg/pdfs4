@@ -137,6 +137,8 @@ namespace pdfs {
                 size = std::stoll(reqParams["size"][0]);
             }
             res.body = fs->read(path, 0, size)->readAll();
+            printf("bodylen=%d\n", res.body.size());
+            fflush(stdout);
         });
 
         // create file

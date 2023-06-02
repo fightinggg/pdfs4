@@ -29,3 +29,11 @@ std::string joinString(const std::vector<std::string> &str, char delimiter) {
         return res;
     }
 }
+
+std::string subString(const std::string &str, int start, int len) {
+    std::string res;
+    for (int i = start; i - start < len && i < str.size(); i++) {
+        res += str[i];
+    }
+    return res;
+}

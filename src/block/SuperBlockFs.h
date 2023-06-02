@@ -196,7 +196,8 @@ namespace pdfs {
                 return stream::fromString(data);
             } else {
                 // TODO lazy
-                return stream::fromString(data + read(filename, start + data.length(), len - data.length())->readAll());
+                auto next = read(filename, start + data.length(), len - data.length());
+                return stream::fromString(data + next->readAll());
             }
         }
 
@@ -214,7 +215,15 @@ namespace pdfs {
                             if (fileBlock.mark == -1) {
                                 return string(std::min(fileBlock.size, len), '0');
                             }
-                            return block[fileBlock.mark];
+                            auto blockStart = start - curStart;
+                            auto res = subString(block[fileBlock.mark], blockStart, len);
+                            printf("block=%d,mark=%d,size=%d,start=%d,blockStart=%d,len=%d\n", fileBlock.block,
+                                   fileBlock.mark,
+                                   fileBlock.size,
+                                   start, blockStart,
+                                   res.size());
+                            fflush(stdout);
+                            return res;
                         }
                         curStart += fileBlock.size;
                     }
@@ -232,7 +241,7 @@ namespace pdfs {
                 if (file.filename == filename) {
                     int64 curStart = 0;
                     for (auto &fileBlock: file.fileBlocks) {
-                        if (curStart == start && curStart <= start && start < curStart + fileBlock.size) {
+                        if (curStart <= start && start < curStart + fileBlock.size) {
                             // update...
                             string blockData = storagePtr->read(fileBlock.block)->readAll();
                             Block block;
@@ -245,7 +254,7 @@ namespace pdfs {
                                 }
                             }
 
-                            auto old = block[fileBlock.mark];
+                            auto old = subString(block[fileBlock.mark], 0, start - curStart);
                             auto add = dataPtr->readN(fileBlock.size - old.size());
                             block[fileBlock.mark] = old + add;
 
