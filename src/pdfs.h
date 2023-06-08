@@ -9,7 +9,7 @@
 #include "utils/StringUtils.h"
 
 namespace pdfs {
-    using int64 = long long;
+    using int64 = int64_t;
     template<class T>
     using vector = std::vector<T>;
     using string = std::string;

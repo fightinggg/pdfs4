@@ -81,9 +81,9 @@ namespace pdfs {
 //        test();
 //        return;
         int port = 8081;
-        string staticPath = "D:\\src\\pdfs4\\webstatic";
+        string staticPath = "/app/static";
 
-        auto storagePtr = StoragePtr(new MemoryStorage(200, 1 << 20));
+        auto storagePtr = StoragePtr(new MemoryStorage(10, 1 << 20));
         auto fs = PdfsPtr(new SuperBlockFs(storagePtr));
 
         addFile(fs, "/a.txt", "123");
@@ -116,8 +116,9 @@ namespace pdfs {
         };
 
 
+        svr.set_mount_point("/", staticPath);
         svr.Get("/", [&](const httplib::Request &, httplib::Response &res) {
-            res.set_redirect("/static");
+            res.set_redirect("/index.html");
         });
 
         svr.Get("/api/list", [&](const httplib::Request &req, httplib::Response &res) {
@@ -169,7 +170,7 @@ namespace pdfs {
         });
 
 
-        svr.set_mount_point("/static/", staticPath);
+
 
         std::cout << "http listen at port " << port << std::endl;
         svr.listen("0.0.0.0", port);

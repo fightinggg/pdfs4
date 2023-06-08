@@ -16,7 +16,7 @@
 
 
 namespace pdfs {
-    using int64 = long long;
+    using int64 = int64_t;
     template<class T>
     using vector = std::vector<T>;
     using string = std::string;
@@ -145,7 +145,7 @@ namespace pdfs {
 
             // find any to write is ok
             for (int i = 1; i < storagePtr->blockNumbers(); i++) {
-                if (used.contains(i)) {
+                if (used.find(i) != used.end()) {
                     continue;
                 }
                 int used = 8;
@@ -181,7 +181,7 @@ namespace pdfs {
 
 
         Files list(string path) {
-
+            return Files();
         }
 
 
@@ -249,7 +249,7 @@ namespace pdfs {
 
                             if (fileBlock.mark == -1) {
                                 fileBlock.mark = 0;
-                                while (block.contains(fileBlock.mark)) {
+                                while (block.find(fileBlock.mark) != block.end()) {
                                     fileBlock.mark++;
                                 }
                             }
