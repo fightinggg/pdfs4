@@ -243,9 +243,14 @@ namespace pdfs {
                     for (auto &fileBlock: file.fileBlocks) {
                         if (curStart <= start && start < curStart + fileBlock.size) {
                             // update...
-                            string blockData = storagePtr->read(fileBlock.block)->readAll();
                             Block block;
-                            deserialization(blockData.data(), blockData.size(), block);
+
+                            try {
+                                string blockData = storagePtr->read(fileBlock.block)->readAll();
+                                deserialization(blockData.data(), blockData.size(), block);
+                            } catch (const NotFoundError &e) {
+
+                            }
 
                             if (fileBlock.mark == -1) {
                                 fileBlock.mark = 0;

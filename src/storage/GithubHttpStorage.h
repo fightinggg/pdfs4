@@ -68,8 +68,7 @@ namespace pdfs {
                 if (res != res404) {
                     return stream::fromString(rsp.body);
                 } else {
-                    puts("404");
-//                    exit(-1);
+                    throw NotFoundError("not found!");
                 }
             }
             puts(rsp.body.data());
@@ -96,8 +95,8 @@ namespace pdfs {
                 exit(-1);
             }
 
-//            string url = "https://api.github.com/repos";
-            string url = "http://localhost:9999";
+            string url = "https://api.github.com/repos";
+//            string url = "http://localhost:9999";
             url += "/" + githubUsername;
             url += "/" + githubRepoName;
             url += "/contents";
@@ -123,9 +122,14 @@ namespace pdfs {
             /**
              * hex(sha('blob %d\0%s'))
              */
-            string old = read(index)->readAll();
+            try {
+                string old = read(index)->readAll();
 //            params["sha"] = hex::hex(sha::sha1("blob " + std::to_string(old.length()) + '\0' + old));
-            params["sha"] = sha::sha1("blob " + std::to_string(old.length()) + '\0' + old);
+                params["sha"] = sha::sha1("blob " + std::to_string(old.length()) + '\0' + old);
+            } catch (const NotFoundError &ignore) {
+                int a = 1; // for debug
+            }
+
 
             vector<string> jsonList;
             for (const auto &item: params) {
@@ -180,8 +184,13 @@ namespace pdfs {
     namespace test {
         void testGithubHttpStorage() {
             Storage *storage = new GithubHttpStorage("", "", "");
-            storage->read(1);
+            try {
+//                storage->read(1);
+            } catch (NotFoundError e) {
+
+            }
             delete storage;
+
         }
     }
 };

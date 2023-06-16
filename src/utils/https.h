@@ -26,6 +26,10 @@ namespace https {
 
 
     HttpRsp request(HttpReq req) {
+        if (req.method.empty()) {
+            req.method = "GET";
+        }
+        printf("%s %s\n", req.method.data(), req.url.data());
         CURL *curl;
         CURLcode res;
         std::string readBuffer;
