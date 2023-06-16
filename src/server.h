@@ -1,3 +1,5 @@
+//#define CPPHTTPLIB_OPENSSL_SUPPORT
+
 #include "../lib/cpp-httplib/httplib.h"
 #include "block/SuperMenuDataFs.h"
 #include "pdfs.h"
@@ -6,6 +8,7 @@
 #include "block/SuperBlockFs.h"
 #include "utils/json.h"
 #include "utils/http.h"
+#include "storage/GithubHttpStorage.h"
 
 namespace pdfs {
     void addFile(PdfsPtr fs, string filename, string data) {
@@ -19,7 +22,7 @@ namespace pdfs {
         }
     }
 
-    void test() {
+    void test2() {
         // 10MB
         auto storagePtr = StoragePtr(new MemoryStorage(10, 1 << 20));
         auto fs = PdfsPtr(new SuperBlockFs(storagePtr));
@@ -77,13 +80,15 @@ namespace pdfs {
     }
 
     void main() {
+        test::testGithubHttpStorage();
 //        _test_deserialization_vector();
 //        test();
 //        return;
         int port = 8081;
         string staticPath = "/app/static";
 
-        auto storagePtr = StoragePtr(new MemoryStorage(10, 1 << 20));
+//        auto storagePtr = StoragePtr(new MemoryStorage(10, 1 << 20));
+        auto storagePtr = StoragePtr(new GithubHttpStorage("", "", ""));
         auto fs = PdfsPtr(new SuperBlockFs(storagePtr));
 
         addFile(fs, "/a.txt", "123");
@@ -100,7 +105,7 @@ namespace pdfs {
             res.set_header("Access-Control-Allow-Headers", "*");
         };
 
-        auto parseRequests = [](string url) {
+        auto parseRequests = [](const string &url) {
             auto split = splitString(url, '?');
             map<string, vector<string>> headers;
             if (split.size() == 2) {
@@ -168,8 +173,6 @@ namespace pdfs {
             res.status = 200;
             res.body = std::to_string(status);
         });
-
-
 
 
         std::cout << "http listen at port " << port << std::endl;

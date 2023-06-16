@@ -2,6 +2,8 @@
 namespace pdfs {
     class Storage {
     public:
+        virtual ~Storage() = default;
+
         virtual stream::InputStreamPtr read(int index) = 0;
 
         virtual void write(int index, std::string s) = 0;
