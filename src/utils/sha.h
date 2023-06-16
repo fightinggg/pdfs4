@@ -4,6 +4,7 @@
 #include <string>
 #include <sstream>
 #include <cstring>
+#include "../../lib/sha1/sha1.h"
 
 
 namespace sha {
@@ -212,12 +213,22 @@ namespace sha {
         return s.str();
     }
 
-    std::string sha256(const std::string& s) {
+    std::string sha256(const std::string &s) {
         SHA256 sha;
         sha.update(s);
         uint8_t *digest = sha.digest();
-        auto res = SHA256::toString(digest);
+        std::string res;
+        for (int i = 0; i < 32; i++) {
+            res += (char) digest[i];
+        }
         delete[] digest;
+        return res;
+    }
+
+    std::string sha1(const std::string &s) {
+        SHA1 checksum;
+        checksum.update(s);
+        auto res = checksum.final();
         return res;
     }
 

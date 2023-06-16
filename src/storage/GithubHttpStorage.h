@@ -124,7 +124,8 @@ namespace pdfs {
              * hex(sha('blob %d\0%s'))
              */
             string old = read(index)->readAll();
-            params["sha"] = hex::hex(sha::sha256("blob " + std::to_string(old.length()) + '\0' + old));
+//            params["sha"] = hex::hex(sha::sha1("blob " + std::to_string(old.length()) + '\0' + old));
+            params["sha"] = sha::sha1("blob " + std::to_string(old.length()) + '\0' + old);
 
             vector<string> jsonList;
             for (const auto &item: params) {

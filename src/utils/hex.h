@@ -5,8 +5,8 @@ namespace hex {
         std::string res;
         static auto chars = "0123456789abcdef";
         for (char ch: s) {
-            res += chars[ch & 0xff];
-            res += chars[(ch >> 4) & 0xff];
+            res += chars[ch & 0xf];
+            res += chars[(ch >> 4) & 0xf];
         }
         return res;
     }
