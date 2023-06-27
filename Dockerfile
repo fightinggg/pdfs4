@@ -6,6 +6,7 @@ COPY ./webstatic /app
 RUN npm run build
 
 FROM fightinggg/cpp-dev-env:master
+RUN yum install libcurl-devel -y
 COPY . /app
 WORKDIR /app
 RUN cmake .
