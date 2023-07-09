@@ -8,7 +8,8 @@
 #include "block/SuperBlockFs.h"
 #include "utils/json.h"
 #include "utils/http.h"
-#include "storage/GithubHttpStorage.h"
+//#include "storage/GithubHttpStorage.h"
+#include "storage/FileSystemStorage.h"
 
 namespace pdfs {
     void addFile(PdfsPtr fs, string filename, string data) {
@@ -24,7 +25,7 @@ namespace pdfs {
 
     void test2() {
         // 10MB
-        auto storagePtr = StoragePtr(new MemoryStorage(10, 1 << 20));
+        auto storagePtr = StoragePtr(new FileSystemStorage(10, 1 << 20));
         auto fs = PdfsPtr(new SuperBlockFs(storagePtr));
 
 //        fs->mkdir("/home");
@@ -80,7 +81,7 @@ namespace pdfs {
     }
 
     void main() {
-        test::testGithubHttpStorage();
+//        test::testGithubHttpStorage();
 //        _test_deserialization_vector();
 //        test();
 //        return;
@@ -88,7 +89,8 @@ namespace pdfs {
         string staticPath = "/app/static";
 
 //        auto storagePtr = StoragePtr(new MemoryStorage(10, 1 << 20));
-        auto storagePtr = StoragePtr(new GithubHttpStorage("", "", ""));
+//        auto storagePtr = StoragePtr(new GithubHttpStorage("", "", ""));
+        auto storagePtr = StoragePtr(new FileSystemStorage(10, 1 << 20));
         auto fs = PdfsPtr(new SuperBlockFs(storagePtr));
 
         addFile(fs, "/a.txt", "123");

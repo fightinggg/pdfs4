@@ -40,6 +40,10 @@ namespace pdfs {
 
 
     void deserialization(const char *data, int len, Block &rhs) {
+        if (len == 0) {
+            // nothing here
+            return;
+        }
         rhs.clear();
 
         int64 size, mark, dataSize;
